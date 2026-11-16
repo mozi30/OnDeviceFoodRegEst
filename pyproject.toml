@@ -1,0 +1,17 @@
+[project]
+name = "ondevice-food"
+version = "0.1.0"
+description = "On-device food recognition and macro estimation (training code)"
+requires-python = ">=3.11"
+dependencies = [
+    "av>=18.1.0",
+    "numpy",
+    "pillow",
+    "requests",
+    "timm>=1.0.31",
+    "torch",
+    "torchvision",
+]
+
+[tool.uv]
+package = false
