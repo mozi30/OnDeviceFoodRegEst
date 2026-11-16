@@ -1,0 +1,256 @@
+dataset,label,type,name,dishes_in_dataset
+nutrition5k,,ignore,,2
+nutrition5k,almonds,ingredient,almonds,344
+nutrition5k,apple,ingredient,apple,411
+nutrition5k,artichokes,ingredient,artichokes,73
+nutrition5k,arugula,ingredient,arugula,986
+nutrition5k,asparagus,ingredient,asparagus,131
+nutrition5k,avocado,ingredient,avocado,135
+nutrition5k,baby carrots,ingredient,baby carrots,6
+nutrition5k,bacon,ingredient,bacon,448
+nutrition5k,bagels,dish,bagels,54
+nutrition5k,banana,ingredient,banana,48
+nutrition5k,banana with peel,ingredient,banana with peel,3
+nutrition5k,basil,ingredient,basil,303
+nutrition5k,bean(seed),ingredient,bean(seed),30
+nutrition5k,beef,ingredient,beef,381
+nutrition5k,beets,ingredient,beets,30
+nutrition5k,bell peppers,ingredient,bell peppers,494
+nutrition5k,berries,ingredient,berries,437
+nutrition5k,biscuits,dish,biscuits,4
+nutrition5k,black beans,ingredient,black beans,26
+nutrition5k,blackberries,ingredient,blackberries,111
+nutrition5k,blue cheese,ingredient,blue cheese,16
+nutrition5k,blueberries,ingredient,blueberries,333
+nutrition5k,bok choy,ingredient,bok choy,449
+nutrition5k,bread,ingredient,bread,44
+nutrition5k,broccoli,ingredient,broccoli,908
+nutrition5k,brown rice,ingredient,brown rice,450
+nutrition5k,brown sugar,ingredient,brown sugar,2
+nutrition5k,brownies,dish,brownies,27
+nutrition5k,brussels sprouts,ingredient,brussels sprouts,346
+nutrition5k,bulgur,ingredient,bulgur,76
+nutrition5k,butter,ingredient,butter,90
+nutrition5k,buttermilk,ingredient,buttermilk,14
+nutrition5k,cabbage,ingredient,cabbage,145
+nutrition5k,caesar dressing,ingredient,caesar dressing,99
+nutrition5k,caesar salad,dish,caesar salad,373
+nutrition5k,cantaloupe,ingredient,cantaloupe,338
+nutrition5k,carrot,ingredient,carrot,921
+nutrition5k,cauliflower,ingredient,cauliflower,563
+nutrition5k,celery,ingredient,celery,63
+nutrition5k,celery root,ingredient,celery root,32
+nutrition5k,cereal,dish,cereal,6
+nutrition5k,chard,ingredient,chard,456
+nutrition5k,chayote squash,ingredient,chayote squash,36
+nutrition5k,cheese,ingredient,cheese,130
+nutrition5k,cheese pizza,dish,cheese pizza,520
+nutrition5k,cherry tomatoes,ingredient,cherry tomatoes,941
+nutrition5k,chia seeds,ingredient,chia seeds,52
+nutrition5k,chicken,ingredient,chicken,697
+nutrition5k,chicken apple sausage,ingredient,chicken apple sausage,94
+nutrition5k,chicken breast,ingredient,chicken breast,98
+nutrition5k,chicken salad,dish,chicken salad,11
+nutrition5k,chicken thighs,ingredient,chicken thighs,190
+nutrition5k,chickpeas,ingredient,chickpeas,77
+nutrition5k,chilaquiles,dish,chilaquiles,9
+nutrition5k,chili,dish,chili,249
+nutrition5k,chive,ingredient,chive,291
+nutrition5k,cilantro,ingredient,cilantro,351
+nutrition5k,cod,ingredient,cod,4
+nutrition5k,cookies,dish,cookies,18
+nutrition5k,corn,ingredient,corn,127
+nutrition5k,corn on the cob,ingredient,corn on the cob,256
+nutrition5k,cottage cheese,ingredient,cottage cheese,24
+nutrition5k,country rice,ingredient,country rice,98
+nutrition5k,couscous,ingredient,couscous,50
+nutrition5k,cranberries,ingredient,cranberries,116
+nutrition5k,cream,ingredient,cream,163
+nutrition5k,cream cheese,ingredient,cream cheese,46
+nutrition5k,croutons,dish,croutons,87
+nutrition5k,cucumbers,ingredient,cucumbers,716
+nutrition5k,deprecated,ignore,,62
+nutrition5k,egg whites,ingredient,egg whites,315
+nutrition5k,eggplant,ingredient,eggplant,184
+nutrition5k,eggs,ingredient,eggs,92
+nutrition5k,feta cheese,ingredient,feta cheese,70
+nutrition5k,figs,ingredient,figs,77
+nutrition5k,fish,ingredient,fish,412
+nutrition5k,flour,ingredient,flour,14
+nutrition5k,fried rice,dish,fried rice,51
+nutrition5k,frozen yogurt,dish,frozen yogurt,7
+nutrition5k,fruit salad,dish,fruit salad,4
+nutrition5k,garden salad,dish,garden salad,21
+nutrition5k,garlic,ingredient,garlic,1882
+nutrition5k,ginger,ingredient,ginger,158
+nutrition5k,goat cheese,ingredient,goat cheese,46
+nutrition5k,granola,dish,granola,93
+nutrition5k,grapefruit juice,ingredient,grapefruit juice,6
+nutrition5k,grapes,ingredient,grapes,254
+nutrition5k,greek salad,dish,greek salad,10
+nutrition5k,greek yogurt,ingredient,greek yogurt,50
+nutrition5k,green beans,ingredient,green beans,308
+nutrition5k,green onions,ingredient,green onions,236
+nutrition5k,grilled chicken,dish,grilled chicken,50
+nutrition5k,ground turkey,ingredient,ground turkey,37
+nutrition5k,ham,ingredient,ham,75
+nutrition5k,hash browns,dish,hash browns,57
+nutrition5k,hominy,ingredient,hominy,26
+nutrition5k,honeydew melons,ingredient,honeydew melons,150
+nutrition5k,ice cream cones,dish,ice cream cones,4
+nutrition5k,jalapenos,ingredient,jalapenos,440
+nutrition5k,jicama,ingredient,jicama,56
+nutrition5k,kale,ingredient,kale,412
+nutrition5k,ketchup,ingredient,ketchup,20
+nutrition5k,kimchi,dish,kimchi,16
+nutrition5k,kiwi,ingredient,kiwi,54
+nutrition5k,lemon,ingredient,lemon,57
+nutrition5k,lemon juice,ingredient,lemon juice,1128
+nutrition5k,lentils,ingredient,lentils,29
+nutrition5k,lettuce,ingredient,lettuce,297
+nutrition5k,lime,ingredient,lime,455
+nutrition5k,mandarin oranges,ingredient,mandarin oranges,55
+nutrition5k,mangos,ingredient,mangos,36
+nutrition5k,mayonnaise,ingredient,mayonnaise,95
+nutrition5k,milk,ingredient,milk,50
+nutrition5k,millet,ingredient,millet,343
+nutrition5k,mixed greens,ingredient,mixed greens,680
+nutrition5k,mozzarella cheese,ingredient,mozzarella cheese,3
+nutrition5k,mushroom,ingredient,mushroom,378
+nutrition5k,mustard,ingredient,mustard,751
+nutrition5k,mustard greens,ingredient,mustard greens,221
+nutrition5k,noodles,ingredient,noodles,36
+nutrition5k,nopales,ingredient,nopales,56
+nutrition5k,nuts,ingredient,nuts,60
+nutrition5k,oatmeal,dish,oatmeal,79
+nutrition5k,olive oil,ingredient,olive oil,3107
+nutrition5k,olives,ingredient,olives,484
+nutrition5k,onions,ingredient,onions,1353
+nutrition5k,orange,ingredient,orange,118
+nutrition5k,orange juice,ingredient,orange juice,67
+nutrition5k,orange with peel,ingredient,orange with peel,2
+nutrition5k,oregano,ingredient,oregano,90
+nutrition5k,parmesan cheese,ingredient,parmesan cheese,223
+nutrition5k,parsley,ingredient,parsley,967
+nutrition5k,parsnips,ingredient,parsnips,12
+nutrition5k,pasta,ingredient,pasta,53
+nutrition5k,pasta salad,dish,pasta salad,4
+nutrition5k,pears,ingredient,pears,129
+nutrition5k,pecans,ingredient,pecans,68
+nutrition5k,pepper,ingredient,pepper,1414
+nutrition5k,pepperoni,ingredient,pepperoni,4
+nutrition5k,pepperoni pizza,dish,pepperoni pizza,106
+nutrition5k,pesto,ingredient,pesto,17
+nutrition5k,pickles,ingredient,pickles,11
+nutrition5k,pilaf,dish,pilaf,14
+nutrition5k,pineapple,ingredient,pineapple,424
+nutrition5k,pizza,dish,pizza,175
+nutrition5k,plate only,ignore,,4
+nutrition5k,pork,ingredient,pork,334
+nutrition5k,potato chips,dish,potato chips,48
+nutrition5k,potatoes,ingredient,potatoes,169
+nutrition5k,pumpkin seeds,ingredient,pumpkin seeds,74
+nutrition5k,quinoa,ingredient,quinoa,259
+nutrition5k,radishes,ingredient,radishes,231
+nutrition5k,raisins,ingredient,raisins,16
+nutrition5k,raspberries,ingredient,raspberries,139
+nutrition5k,rice noodles,ingredient,rice noodles,35
+nutrition5k,roast chicken,dish,roast chicken,3
+nutrition5k,roasted potatoes,dish,roasted potatoes,318
+nutrition5k,rosemary,ingredient,rosemary,301
+nutrition5k,salmon,ingredient,salmon,248
+nutrition5k,salsa,ingredient,salsa,37
+nutrition5k,salt,ingredient,salt,2736
+nutrition5k,sandwiches,dish,sandwiches,10
+nutrition5k,sausage,ingredient,sausage,250
+nutrition5k,scrambled eggs,dish,scrambled eggs,479
+nutrition5k,shallots,ingredient,shallots,783
+nutrition5k,shrimp,ingredient,shrimp,39
+nutrition5k,snow peas,ingredient,snow peas,51
+nutrition5k,sour cream,ingredient,sour cream,104
+nutrition5k,soy sauce,ingredient,soy sauce,244
+nutrition5k,spinach (cooked),dish,spinach (cooked),292
+nutrition5k,spinach (raw),ingredient,spinach (raw),871
+nutrition5k,squash,ingredient,squash,394
+nutrition5k,steak,ingredient,steak,133
+nutrition5k,strawberries,ingredient,strawberries,131
+nutrition5k,succotash,dish,succotash,4
+nutrition5k,sugar,ingredient,sugar,100
+nutrition5k,sun dried tomatoes,ingredient,sun dried tomatoes,38
+nutrition5k,sunflower seeds,ingredient,sunflower seeds,8
+nutrition5k,sweet potato,ingredient,sweet potato,384
+nutrition5k,syrup,ingredient,syrup,2
+nutrition5k,tatsoi,ingredient,tatsoi,52
+nutrition5k,tempeh,ingredient,tempeh,3
+nutrition5k,thyme,ingredient,thyme,592
+nutrition5k,toast,dish,toast,2
+nutrition5k,tofu,ingredient,tofu,202
+nutrition5k,tomatillo,ingredient,tomatillo,69
+nutrition5k,tomatoes,ingredient,tomatoes,359
+nutrition5k,tortilla,ingredient,tortilla,113
+nutrition5k,tortilla chips,dish,tortilla chips,12
+nutrition5k,tuna,ingredient,tuna,35
+nutrition5k,tuna salad,dish,tuna salad,10
+nutrition5k,turkey bacon,ingredient,turkey bacon,57
+nutrition5k,turnips,ingredient,turnips,30
+nutrition5k,vegetable oil,ingredient,vegetable oil,14
+nutrition5k,vinaigrette,ingredient,vinaigrette,167
+nutrition5k,vinegar,ingredient,vinegar,1407
+nutrition5k,waffles,dish,waffles,17
+nutrition5k,walnuts,ingredient,walnuts,172
+nutrition5k,watermelon,ingredient,watermelon,209
+nutrition5k,wheat berry,ingredient,wheat berry,592
+nutrition5k,wheat bread,ingredient,wheat bread,2
+nutrition5k,white beans,ingredient,white beans,39
+nutrition5k,white rice,ingredient,white rice,569
+nutrition5k,white wine,ingredient,white wine,90
+nutrition5k,wild rice,ingredient,wild rice,30
+nutrition5k,wine,ingredient,wine,92
+nutrition5k,yam,ingredient,yam,189
+nutrition5k,yogurt,ingredient,yogurt,14
+nutrition5k,zucchini,ingredient,zucchini,259
+nutritionverse_real,asian-pear,ingredient,asian pear,24
+nutritionverse_real,captain-crunch-granola-bar,dish,captain crunch granola bar,13
+nutritionverse_real,carrot,ingredient,carrot,14
+nutritionverse_real,chicken-breast,ingredient,chicken breast,14
+nutritionverse_real,chicken-leg,ingredient,chicken leg,27
+nutritionverse_real,chicken-sandwich,dish,chicken sandwich,12
+nutritionverse_real,chicken-wing,ingredient,chicken wing,53
+nutritionverse_real,chocolate-granola-bar,dish,chocolate granola bar,13
+nutritionverse_real,corn,ingredient,corn,12
+nutritionverse_real,costco-california-sushi-roll,dish,california sushi roll,13
+nutritionverse_real,costco-cucumber-sushi-roll,dish,cucumber sushi roll,11
+nutritionverse_real,costco-egg,dish,boiled egg,12
+nutritionverse_real,costco-salad-sushi-roll,dish,salad sushi roll,18
+nutritionverse_real,costco-shrimp-sushi-roll,dish,shrimp sushi roll,29
+nutritionverse_real,costco-tuna-rice-ball,dish,tuna rice ball,15
+nutritionverse_real,crispy-pork-rib,dish,crispy pork rib,7
+nutritionverse_real,cucumber-piece,ingredient,cucumbers,22
+nutritionverse_real,french-fry,dish,french fries,34
+nutritionverse_real,half-bread-loaf,ingredient,bread,31
+nutritionverse_real,half-minced-shrimp,dish,minced shrimp,21
+nutritionverse_real,half-shrimp-salad-roll,dish,shrimp salad roll,21
+nutritionverse_real,hamburger,dish,hamburger,9
+nutritionverse_real,lamb-shank,ingredient,lamb shank,32
+nutritionverse_real,lasagna,dish,lasagna,14
+nutritionverse_real,lobster,ingredient,lobster,13
+nutritionverse_real,meatball,dish,meatball,9
+nutritionverse_real,meatloaf,dish,meatloaf,14
+nutritionverse_real,nature-valley-granola-bar,dish,nature valley granola bar,10
+nutritionverse_real,near-whole-chicken,dish,roast chicken,17
+nutritionverse_real,plain-toast,dish,toast,19
+nutritionverse_real,pork-feet,ingredient,pork feet,14
+nutritionverse_real,red-apple,ingredient,apple,21
+nutritionverse_real,red-yellow-apple,ingredient,apple,7
+nutritionverse_real,rib,ingredient,rib,26
+nutritionverse_real,salad-beef-strip,ingredient,beef strip,13
+nutritionverse_real,salad-chicken-strip,ingredient,chicken strip,10
+nutritionverse_real,salmon-nigiri,dish,salmon nigiri,0
+nutritionverse_real,shrimp-nigiri,dish,shrimp nigiri,0
+nutritionverse_real,shrimp-salad-roll,dish,shrimp salad roll,14
+nutritionverse_real,stack-of-tofu-4pc,ingredient,tofu,19
+nutritionverse_real,steak,ingredient,steak,21
+nutritionverse_real,steak-piece,ingredient,steak,3
+nutritionverse_real,toast-with-strawberry-jam,dish,toast with strawberry jam,16
+nutritionverse_real,tuna-nigiri,dish,tuna nigiri,0
+nutritionverse_real,veal-kebab-piece,dish,veal kebab,27
