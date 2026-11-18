@@ -70,6 +70,7 @@ from torchvision import transforms
 from .datasets import (CACHE_DIR, TARGET_KEYS, Interleave, LocalFoodDataset, MMFood100K, Nutrition5k,
                        Nutrition5kSideAngles, NutritionVerseReal, local_available)
 from .datasets.labels import components
+from .label_quality import clean as clean_labels
 from .models import BACKBONES, FoodModel
 
 DATASETS = ("nutrition5k", "nutritionverse_real", "nutrition5k_side", "mm_food_100k")
@@ -97,6 +98,7 @@ class TrainConfig:
     init_from: str = ""                            # checkpoint to start from (layers with matching shapes)
     freeze_bn: bool = False                        # backbone BatchNorm always uses its ImageNet statistics
     unfreeze_warmup: float = 0.0                   # epochs of linear backbone-lr warm-up after unfreezing
+    clean_labels: bool = True                      # drop records with impossible labels (label_quality.py)
     local_images: bool = False                     # read Nutrition5k / NutritionVerse-Real from training.prefetch convert
     keep_last: bool = False                        # keep last.pt after training (disk space: only best.pt by default)
     image_size: int = 224
@@ -186,6 +188,12 @@ def build_dataset(name: str, split: str, cfg: TrainConfig, train: bool):
               else MMFood100K(split, **common))
     else:
         raise ValueError(f"unknown dataset {name!r}, choose from {DATASETS}")
+    if cfg.clean_labels and ds.records:
+        ds.records, dropped = clean_labels(ds.records)
+        if dropped:
+            dishes = sorted({r["dish_id"] for r, _ in dropped})
+            print(f"{name}/{split}: dropped {len(dropped)} records of {len(dishes)} dishes with impossible labels "
+                  f"({'; '.join(sorted({why for _, why in dropped})[:4])})", flush=True)
     if cfg.limit:
         records = list(ds.records)
         random.Random(cfg.seed).shuffle(records)

@@ -66,7 +66,11 @@ def load(checkpoint: Path) -> tuple[ExportWrapper, dict]:
         "source_checkpoint": str(checkpoint),
         "backbone": cfg["backbone"],
         "image_size": cfg["image_size"],
-        "input": "float32 [1, H, W, 3] RGB 0..1, shorter side resized to H then centre crop",
+        "crop": cfg.get("crop", "center"),
+        "pad_fill": [124, 116, 104],  # trainer.PadSquare
+        "input": ("float32 [1, H, W, 3] RGB 0..1, shorter side resized to H then centre crop"
+                  if cfg.get("crop", "center") == "center" else
+                  "float32 [1, H, W, 3] RGB 0..1, padded to a square with pad_fill (image centred), then resized to H x H"),
         "output_layout": ["mass_g", "kcal", "fat_g", "carb_g", "protein_g", "log_mass", "log_std90"]
                          + ["dish:" + d for d in ckpt["dishes"]] + ["ingredient:" + i for i in ckpt["ingredients"]],
         "n_fixed": 7,

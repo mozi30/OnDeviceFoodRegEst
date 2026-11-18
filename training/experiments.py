@@ -110,6 +110,13 @@ GROUPS["final_side"] = {"seeds": [0, 1, 2], "base": GROUPS["round3"]["base"], "e
 GROUPS["final_hires"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "experiments": {
     f"{b}_img{size}": args + ["--image-size", str(size)]
     for b, args in GROUPS["final_side"]["experiments"].items() for size in (288, 320)}}
+# pad to square instead of centre crop (side frames lose 44 % of their width with the centre crop)
+GROUPS["crop_pad"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "experiments": {
+    "mobilenetv3_large_img320_pad": GROUPS["final_hires"]["experiments"]["mobilenetv3_large_img320"] + ["--crop", "pad"]}}
+# final config trained on cleaned labels (training.label_quality, now default), centre crop and pad to square
+GROUPS["clean"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "experiments": {
+    "mobilenetv3_large_img320": GROUPS["final_hires"]["experiments"]["mobilenetv3_large_img320"],
+    "mobilenetv3_large_img320_pad": GROUPS["crop_pad"]["experiments"]["mobilenetv3_large_img320_pad"]}}
 
 
 def run_one(group: str, name: str, args: list[str], seed: int, gpu_lock=None) -> str:

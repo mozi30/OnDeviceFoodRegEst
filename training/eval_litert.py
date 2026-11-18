@@ -19,13 +19,27 @@ import numpy as np
 from PIL import Image
 from torchvision import transforms
 
+from .label_quality import label_problem
+
 LOCAL_DIR = Path.home() / ".cache" / "ondevice_food" / "local"
 TARGET_KEYS = ("mass_g", "kcal", "fat_g", "carb_g", "protein_g")
 WEIGHTS = {"nutrition5k": 0.2, "nutritionverse_real": 0.2, "nutrition5k_side": 0.6}
 
 
 def records(name: str, split: str) -> list[dict]:
-    return [json.loads(line) for line in (LOCAL_DIR / name / f"records_{split}.jsonl").open()]
+    recs = [json.loads(line) for line in (LOCAL_DIR / name / f"records_{split}.jsonl").open()]
+    return [r for r in recs if label_problem(r) is None]  # same cleaning as the trainer
+
+
+def pad_square(img: Image.Image, fill=(124, 116, 104)) -> Image.Image:
+    """Same as trainer.PadSquare (the trainer imports torch/timm/datasets, not available here)."""
+    w, h = img.size
+    if w == h:
+        return img
+    side = max(w, h)
+    out = Image.new("RGB", (side, side), fill)
+    out.paste(img, ((side - w) // 2, (side - h) // 2))
+    return out
 
 
 def rel_errors(pred: np.ndarray, true: np.ndarray) -> dict[str, float]:
@@ -42,6 +56,7 @@ def main() -> None:
     p.add_argument("model", type=Path)
     p.add_argument("--compare", type=Path, help="results.json of the PyTorch run")
     p.add_argument("--threads", type=int, default=8)
+    p.add_argument("--crop", choices=["center", "pad"], default="center", help="preprocessing the model was trained with")
     a = p.parse_args()
     from ai_edge_litert.interpreter import Interpreter
 
@@ -49,7 +64,10 @@ def main() -> None:
     it.allocate_tensors()
     inp, out = it.get_input_details()[0], it.get_output_details()[0]
     size = int(inp["shape"][1])
-    tf = transforms.Compose([transforms.Resize(size), transforms.CenterCrop(size)])
+    if a.crop == "pad":
+        tf = transforms.Compose([pad_square, transforms.Resize((size, size))])
+    else:
+        tf = transforms.Compose([transforms.Resize(size), transforms.CenterCrop(size)])
     ref = json.loads(a.compare.read_text())["test"] if a.compare else {}
 
     scores, times = {}, []
