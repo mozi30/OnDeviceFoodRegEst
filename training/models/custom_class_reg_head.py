@@ -24,6 +24,7 @@ from torch.nn import functional as F
 
 KCAL_PER_G = {"protein": 4.0, "fat": 9.0, "carb": 4.0}
 MAX_LOG_MASS = math.log(5000.0)  # outputs are bounded to 5 kg (the loss uses the unbounded log mass)
+MAX_PER_100G = 100.0  # the totals use at most 100 g per 100 g of each macro (the loss uses the unbounded value)
 
 
 class ClassRegHead(nn.Module):
@@ -70,16 +71,23 @@ class ClassRegHead(nn.Module):
                 self.composition.bias.copy_(torch.tensor([250.0, 10.0, 25.0, 12.0]).log1p())
 
     def forward(self, features: torch.Tensor) -> dict[str, torch.Tensor]:
+        # Always float32: under mixed precision (GPU) the hidden layer overflows float16 (> 65504)
+        # as soon as the backbone features get large, and the macros become inf / nan.
+        with torch.autocast(features.device.type, enabled=False):
+            return self._forward(features.float())
+
+    def _forward(self, features: torch.Tensor) -> dict[str, torch.Tensor]:
         h = self.shared(features)
         log_mass, log_mass_var = self.amount(h).unbind(-1)
-        mass_g = log_mass.float().clamp(max=MAX_LOG_MASS).exp()
+        mass_g = log_mass.clamp(max=MAX_LOG_MASS).exp()
         if self.mode == "factorized":
             per_100g = F.softplus(self.composition(h))  # >= 0
-            protein_g, fat_g, carb_g = (per_100g * mass_g.unsqueeze(-1) / 100).unbind(-1)
+            bounded = per_100g.clamp(max=MAX_PER_100G)
+            protein_g, fat_g, carb_g = (bounded * mass_g.unsqueeze(-1) / 100).unbind(-1)
             kcal = KCAL_PER_G["protein"] * protein_g + KCAL_PER_G["fat"] * fat_g + KCAL_PER_G["carb"] * carb_g
         else:
             log_totals = self.composition(h)  # log1p of kcal, fat, carb, protein
-            kcal, fat_g, carb_g, protein_g = log_totals.float().clamp(max=10).expm1().clamp_min(0).unbind(-1)
+            kcal, fat_g, carb_g, protein_g = log_totals.clamp(max=10).expm1().clamp_min(0).unbind(-1)
             per_100g = torch.stack([protein_g, fat_g, carb_g], -1) / mass_g.unsqueeze(-1) * 100
 
         out = {
