@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-0: #f4f3f0; --surface-1: #fcfcfb; --line: #e4e2dc; --grid: #ecebe6;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #77766f;
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+    --band: rgba(120, 118, 110, .09);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-0: #121211; --surface-1: #1a1a19; --line: #33332f; --grid: #262624;
+      --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #96958c;
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+      --band: rgba(200, 198, 190, .07);
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-0: #121211; --surface-1: #1a1a19; --line: #33332f; --grid: #262624;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #96958c;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --band: rgba(200, 198, 190, .07);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body.viz-root { background: var(--surface-0); color: var(--text-primary);
+                  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 32px; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-secondary); margin: 0 0 14px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-bottom: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--text-secondary); font-size: 13px; }
+  .legend svg { vertical-align: middle; margin-right: 6px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { font: inherit; font-size: 13px; border: 0; background: var(--surface-1); color: var(--text-secondary);
+                padding: 5px 10px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface-1); border: 1px solid var(--line); border-radius: 10px; padding: 12px 12px 6px; position: relative; }
+  .panel h2 { font-size: 13px; font-weight: 600; margin: 0; }
+  .panel .note { font-size: 12px; color: var(--text-muted); margin: 0 0 4px; }
+  .panel svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .axis text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .series { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .best { stroke: var(--surface-1); stroke-width: 2; }
+  .cross { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--line);
+         border-radius: 8px; padding: 6px 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12);
+         white-space: nowrap; z-index: 3; font-variant-numeric: tabular-nums; }
+  .tip b { font-weight: 600; }
+  .tip .row { display: flex; gap: 8px; align-items: center; color: var(--text-secondary); }
+  .tip .row span:last-child { margin-left: auto; color: var(--text-primary); padding-left: 10px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 18px; background: var(--surface-1);
+          border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-variant-numeric: tabular-nums; }
+  th, td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: right; font-size: 13px; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-secondary); font-weight: 600; }
+  caption { text-align: left; color: var(--text-secondary); padding: 0 0 6px; font-size: 13px; caption-side: top; }
+  .swatch { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+</style>
+</head>
+<body class="viz-root">
+<div class="wrap">
+  <h1>__TITLE__</h1>
+  <p class="sub">Lower is better for every panel. Shaded band: backbone frozen. Dot: best val-score epoch (the checkpoint that is kept). __NOTE__</p>
+  <div class="controls">
+    <div class="legend" id="legend"></div>
+    <span style="flex:1"></span>
+    <div class="seg" role="group" aria-label="Epoch range">
+      <button id="rAll" aria-pressed="false">All epochs</button>
+      <button id="rZoom" aria-pressed="true">From epoch 5</button>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <table id="table"></table>
+</div>
+<script>
+const DATA = __DATA__;
+const COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)"];
+const DASH = ["", "6 4", "2 3", "10 3 2 3"];
+let fromEpoch = 5;
+const hiddenGroups = new Set();
+const shown = () => runs.filter(r => !hiddenGroups.has(r.group));
+
+const runs = [];
+DATA.groups.forEach((g, gi) => g.runs.forEach((r, ri) => runs.push({ ...r, group: g.label, color: COLORS[gi % 4], dash: DASH[ri % 4],
+  seed: r.name.match(/_s(\d+)$/)?.[1] ?? ri })));
+const sets = [...new Set(runs.flatMap(r => Object.keys(r.per_set)))];
+const PANELS = [
+  { key: "train_loss", title: "Train loss", note: "total loss (Gaussian NLL of the mass can be negative)", get: r => r.train_loss, dp: 3 },
+  { key: "val_loss", title: "Val loss", note: "same loss on the val sets", get: r => r.val_loss, dp: 3 },
+  { key: "val_score", title: "Val score", note: "model selection: weighted mean rel. error, %", get: r => r.val_score, dp: 2, best: true },
+  ...sets.map(s => ({ key: s, title: "Val score · " + (DATA.short[s] || s), note: "mean rel. error of the 5 targets, %", get: r => r.per_set[s], dp: 2 })),
+];
+
+function niceTicks(lo, hi, n = 4) {
+  const span = hi - lo || 1, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= step0);
+  const ticks = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(+v.toFixed(10));
+  return ticks;
+}
+
+function legend() {
+  const groups = DATA.groups.map((g, gi) => `<span class="lg" data-group="${g.label}" role="button" tabindex="0" aria-pressed="${!hiddenGroups.has(g.label)}" aria-label="Show or hide ${g.label}" title="Click to show / hide" style="cursor:pointer;opacity:${hiddenGroups.has(g.label) ? .35 : 1}"><svg width="22" height="6"><line x1="1" y1="3" x2="21" y2="3" stroke="${COLORS[gi % 4]}" stroke-width="2.5" stroke-linecap="round"/></svg>${g.label}</span>`);
+  const maxSeeds = Math.max(...DATA.groups.map(g => g.runs.length));
+  const seeds = Array.from({ length: maxSeeds }, (_, i) => `<span><svg width="22" height="6"><line x1="1" y1="3" x2="21" y2="3" stroke="var(--text-secondary)" stroke-width="2" stroke-dasharray="${DASH[i]}"/></svg>seed ${i}</span>`);
+  const el = document.getElementById("legend");
+  el.innerHTML = groups.join("") + seeds.join("") + `<span style="color:var(--text-muted)">· click a group to hide it</span>`;
+  el.querySelectorAll(".lg").forEach(n => {
+    const toggle = () => { const g = n.dataset.group; hiddenGroups.has(g) ? hiddenGroups.delete(g) : hiddenGroups.add(g);
+      if (hiddenGroups.size === DATA.groups.length) hiddenGroups.delete(g); render(); };
+    n.onclick = toggle; n.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } };
+  });
+}
+
+function panel(p) {
+  const W = 380, H = 220, m = { l: 44, r: 10, t: 8, b: 24 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const runs = shown();
+  const maxEpoch = Math.max(...runs.map(r => r.epoch.at(-1)));
+  const x0 = Math.min(fromEpoch, maxEpoch - 1);
+  const vals = runs.flatMap(r => p.get(r).filter((v, i) => v != null && r.epoch[i] >= x0));
+  let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad;
+  const X = e => m.l + (e - x0) / (maxEpoch - x0) * iw, Y = v => m.t + (1 - (v - lo) / (hi - lo)) * ih;
+  const yt = niceTicks(lo, hi), xt = niceTicks(x0, maxEpoch, 5).filter(e => Number.isInteger(e) && e >= x0);
+  const frozen = Math.max(...runs.map(r => r.frozen));
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${p.title} per epoch">`;
+  if (frozen >= x0) s += `<rect x="${X(Math.max(x0, 0.5))}" y="${m.t}" width="${Math.max(0, X(frozen + 0.5) - X(Math.max(x0, 0.5)))}" height="${ih}" fill="var(--band)"/>`;
+  s += `<g class="axis">` + yt.map(v => `<line class="gridline" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`).join("")
+     + xt.map(e => `<text x="${X(e)}" y="${H - 6}" text-anchor="middle">${e}</text>`).join("") + `</g>`;
+  runs.forEach(r => {
+    const pts = r.epoch.map((e, i) => [e, p.get(r)[i]]).filter(([e, v]) => v != null && e >= x0);
+    s += `<path class="series" stroke="${r.color}" stroke-dasharray="${r.dash}" d="${pts.map(([e, v], i) => (i ? "L" : "M") + X(e).toFixed(1) + " " + Y(v).toFixed(1)).join("")}"/>`;
+    if (p.best) {
+      const v = p.get(r); const bi = v.indexOf(Math.min(...v));
+      if (r.epoch[bi] >= x0) s += `<circle class="best" cx="${X(r.epoch[bi])}" cy="${Y(v[bi])}" r="4.5" fill="${r.color}"/>`;
+    }
+  });
+  s += `<line class="cross" id="x-${p.key}" y1="${m.t}" y2="${m.t + ih}" visibility="hidden"/>`;
+  s += `<rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" data-key="${p.key}"/></svg>`;
+  return { svg: s, X, x0, maxEpoch, m, W, iw };
+}
+
+function render() {
+  legend();
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  PANELS.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "panel";
+    const g = panel(p);
+    div.innerHTML = `<h2>${p.title}</h2><p class="note">${p.note}</p>${g.svg}<div class="tip" hidden></div>`;
+    grid.appendChild(div);
+    const svg = div.querySelector("svg"), tip = div.querySelector(".tip"), cross = div.querySelector(".cross");
+    const hit = svg.querySelector("rect[data-key]");
+    hit.addEventListener("mousemove", ev => {
+      const box = svg.getBoundingClientRect(), scale = g.W / box.width;
+      const sx = (ev.clientX - box.left) * scale;
+      const e = Math.round(g.x0 + (sx - g.m.l) / g.iw * (g.maxEpoch - g.x0));
+      const ex = g.X(e);
+      cross.setAttribute("x1", ex); cross.setAttribute("x2", ex); cross.setAttribute("visibility", "visible");
+      const rows = shown().map(r => { const i = r.epoch.indexOf(e); const v = i >= 0 ? p.get(r)[i] : null;
+        return v == null ? "" : `<div class="row"><span class="swatch" style="border-color:${r.color};border-top-style:${r.dash ? "dashed" : "solid"}"></span><span>${r.group} · s${r.seed}</span><span>${v.toFixed(p.dp)}</span></div>`; }).join("");
+      tip.innerHTML = `<b>Epoch ${e}</b>${rows}`;
+      tip.hidden = false;
+      const pbox = div.getBoundingClientRect();
+      const px = box.left - pbox.left + ex / scale, flip = px > div.clientWidth * 0.55;
+      tip.style.left = (flip ? px - tip.offsetWidth - 12 : px + 12) + "px";
+      tip.style.top = (box.top - pbox.top + 10) + "px";
+    });
+    hit.addEventListener("mouseleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+  });
+  table();
+}
+
+function table() {
+  const head = `<caption>Summary per run (table view of the charts)</caption><tr><th>Run</th><th>Epochs</th><th>Best val score</th><th>at epoch</th>`
+    + sets.map(s => `<th>${DATA.short[s] || s} at best</th>`).join("") + `<th>Last train loss</th><th>Last val loss</th></tr>`;
+  const rows = shown().map(r => {
+    const bi = r.val_score.indexOf(Math.min(...r.val_score));
+    return `<tr><td><span class="swatch" style="border-color:${r.color};border-top-style:${r.dash ? "dashed" : "solid"}"></span>${r.group} · seed ${r.seed}${r.done ? "" : " (running)"}</td>
+      <td>${r.epoch.at(-1)}</td><td>${r.val_score[bi].toFixed(2)}</td><td>${r.epoch[bi]}</td>`
+      + sets.map(s => `<td>${r.per_set[s][bi]?.toFixed(2) ?? "–"}</td>`).join("")
+      + `<td>${r.train_loss.at(-1).toFixed(3)}</td><td>${r.val_loss.at(-1).toFixed(3)}</td></tr>`;
+  }).join("");
+  document.getElementById("table").innerHTML = head + rows;
+}
+
+function setRange(v) {
+  fromEpoch = v;
+  document.getElementById("rAll").setAttribute("aria-pressed", v === 1);
+  document.getElementById("rZoom").setAttribute("aria-pressed", v !== 1);
+  render();
+}
+document.getElementById("rAll").onclick = () => setRange(1);
+document.getElementById("rZoom").onclick = () => setRange(5);
+render();
+</script>
+</body>
+</html>

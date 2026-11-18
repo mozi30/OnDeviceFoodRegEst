@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training samples</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6a66; --line: #e3e1db;
+    --accent: #2f6f5e; --accent-ink: #ffffff; --chip: #eef3f1; --chip-other: #f4ece4; --warn: #a3472a;
+    --n5k: #2f6f5e; --side: #c07a2c; --nvr: #4b5fa8; --mm: #8a4b8f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151614; --panel: #1f201e; --ink: #ecebe6; --muted: #9c9b95; --line: #33342f;
+      --accent: #6fb7a1; --accent-ink: #10201b; --chip: #24322e; --chip-other: #3a2f25; --warn: #e08a6c;
+      --n5k: #6fb7a1; --side: #e0a35e; --nvr: #8d9de0; --mm: #c48ac8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--panel); border-bottom: 1px solid var(--line);
+           padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  header h1 { font-size: 16px; margin: 0 8px 0 0; font-weight: 650; }
+  label { color: var(--muted); font-size: 12px; display: flex; gap: 6px; align-items: center; }
+  select, input { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+                  border-radius: 6px; padding: 4px 6px; }
+  input[type=number] { width: 84px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+           border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .grow { flex: 1; }
+  .pos { font-variant-numeric: tabular-nums; color: var(--muted); }
+  main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr); gap: 16px; padding: 16px;
+         max-width: 1500px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+             margin: 0 0 10px; font-weight: 600; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .inputs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+  .inputs figure, .orig figure { margin: 0; }
+  .inputs img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block;
+                background: var(--line); }
+  .orig .frame { position: relative; display: inline-block; max-width: 100%; border-radius: 8px; overflow: hidden; }
+  .orig img { max-width: 100%; max-height: 360px; display: block; background: var(--line); }
+  .cropbox { position: absolute; border: 2px solid #ffd54a; box-shadow: 0 0 0 9999px rgba(0, 0, 0, .55);
+             pointer-events: none; }
+  figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  td, th { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+  th:first-child, td:first-child { text-align: left; color: var(--muted); font-weight: 500; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 2px 9px; font-size: 13px; }
+  .chip.other { background: var(--chip-other); }
+  .chip small { color: var(--muted); }
+  .badge { display: inline-block; border-radius: 6px; padding: 2px 8px; font-weight: 600; font-size: 12px;
+           color: #fff; background: var(--muted); }
+  .bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); margin: 6px 0 4px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .meta { font-size: 12px; color: var(--muted); word-break: break-all; }
+  .err { color: var(--warn); }
+  .hint { font-size: 12px; color: var(--muted); }
+  kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Training samples</h1>
+  <label>Source <select id="source"></select></label>
+  <label id="epochWrap">Epoch <input id="epoch" type="number" min="1" value="1"></label>
+  <label>Sample <input id="index" type="number" min="0" value="0"></label>
+  <label>Crop <select id="crop">
+    <option value="center">center crop</option>
+    <option value="pad">pad to square (whole image)</option>
+  </select></label>
+  <button id="prev" title="Previous (←)">‹ Prev</button>
+  <button id="next" class="primary" title="Next (→)">Next ›</button>
+  <button id="rand" title="Random sample (R)">Random</button>
+  <button id="aug" title="New augmentation draws (A)">Re-augment</button>
+  <span class="grow"></span>
+  <span class="pos" id="pos"></span>
+</header>
+<main>
+  <div class="stack">
+    <section class="card">
+      <h2 id="inputsTitle">Model input</h2>
+      <div class="inputs" id="inputs"></div>
+      <p class="hint" id="inputsHint"></p>
+    </section>
+    <section class="card orig">
+      <h2>Stored photo · what the model sees</h2>
+      <figure><div class="frame"><img id="original" alt="stored photo"><div class="cropbox" id="cropbox" hidden></div></div>
+        <figcaption id="origCap"></figcaption></figure>
+    </section>
+  </div>
+  <div class="stack">
+    <section class="card" id="where"></section>
+    <section class="card">
+      <h2>Targets</h2>
+      <div id="targets"></div>
+    </section>
+    <section class="card">
+      <h2>Recognition labels</h2>
+      <div id="labels"></div>
+    </section>
+    <section class="card" id="predCard" hidden>
+      <h2>Prediction (checkpoint, eval transform)</h2>
+      <div id="pred"></div>
+    </section>
+    <section class="card">
+      <h2>Record</h2>
+      <div class="meta" id="meta"></div>
+    </section>
+    <p class="hint"><kbd>←</kbd> <kbd>→</kbd> previous / next · <kbd>R</kbd> random · <kbd>A</kbd> new augmentation</p>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const COLORS = { nutrition5k: "var(--n5k)", nutrition5k_side: "var(--side)", nutritionverse_real: "var(--nvr)",
+                 mm_food_100k: "var(--mm)" };
+const SHORT = { nutrition5k: "N5k overhead", nutrition5k_side: "N5k side", nutritionverse_real: "NVR",
+                mm_food_100k: "MM-Food" };
+let info = null, busy = false;
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function fmt(v, d = 1) { return v == null ? "–" : Number(v).toFixed(d); }
+function mixBar(mix) {
+  const total = Object.values(mix).reduce((a, b) => a + b, 0) || 1;
+  const parts = Object.entries(mix).map(([k, n]) =>
+    `<span style="width:${100 * n / total}%;background:${COLORS[k] || "var(--muted)"}" title="${SHORT[k] || k}: ${n}"></span>`);
+  const legend = Object.entries(mix).map(([k, n]) =>
+    `<span><i style="background:${COLORS[k] || "var(--muted)"}"></i>${SHORT[k] || k} ${n} (${(100 * n / total).toFixed(0)} %)</span>`);
+  return `<div class="bar">${parts.join("")}</div><div class="legend">${legend.join("")}</div>`;
+}
+
+async function load(params = {}) {
+  if (busy) return;
+  busy = true; document.body.style.cursor = "progress";
+  const q = new URLSearchParams({ source: $("source").value, epoch: $("epoch").value, i: $("index").value, views: 4,
+                                  crop: $("crop").value, ...params });
+  try {
+    const r = await fetch("/api/sample?" + q);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    render(d);
+  } catch (e) {
+    $("where").innerHTML = `<p class="err">${esc(e.message)}</p>`;
+  } finally {
+    busy = false; document.body.style.cursor = "";
+  }
+}
+
+function render(d) {
+  $("index").value = d.index;
+  $("pos").textContent = `${d.index + 1} / ${d.total}`;
+  const train = d.source === "train";
+  $("inputsTitle").textContent = train ? `Model input · ${d.inputs.length} random draws of the training transform`
+                                       : "Model input · eval transform";
+  $("inputs").innerHTML = d.inputs.map((b, i) =>
+    `<figure><img src="data:image/jpeg;base64,${b}" alt="model input ${i + 1}"><figcaption>${train ? "draw " + (i + 1) : "as evaluated"}</figcaption></figure>`).join("");
+  const cropNote = d.crop === d.crop_trained ? "as trained" : `run was trained with "${d.crop_trained}"`;
+  $("inputsHint").textContent = `${info.config.image_size} × ${info.config.image_size} px, crop ${d.crop} (${cropNote}), augment ${train ? info.config.augment : "none"}; shown before ImageNet normalisation.`;
+  $("original").src = "data:image/jpeg;base64," + d.original;
+  const box = $("cropbox");
+  if (d.crop_box) {
+    const [x, y, w, h] = d.crop_box;
+    Object.assign(box.style, { left: 100 * x + "%", top: 100 * y + "%", width: 100 * w + "%", height: 100 * h + "%" });
+    box.hidden = false;
+  } else box.hidden = true;
+  const [W, H] = d.original_size;
+  $("origCap").textContent = d.crop === "center"
+    ? `${W} × ${H} px as stored · yellow box = model input, ${d.kept_pct} % of the long side kept, darkened parts are cut off`
+    : `${W} × ${H} px as stored · whole image kept, padded to a square with grey`;
+
+  const badge = `<span class="badge" style="background:${COLORS[d.dataset] || "var(--muted)"}">${SHORT[d.dataset] || d.dataset}</span>`;
+  $("where").innerHTML = train
+    ? `<h2>Position in training</h2><p>${badge} &nbsp;epoch <b>${d.epoch}</b> · batch <b>${d.batch + 1}</b> / ${d.n_batches} · sample ${d.pos + 1} / ${info.config.batch_size}</p>
+       <div class="hint">This batch</div>${mixBar(d.batch_mix)}
+       <div class="hint" style="margin-top:8px">Whole epoch</div>${mixBar(d.epoch_mix)}`
+    : `<h2>Evaluation split</h2><p>${badge} &nbsp;${esc(d.source.replace(":", " · "))}</p>`;
+
+  const t = d.targets, p100 = d.per_100g;
+  $("targets").innerHTML = `<table>
+    <tr><th></th><th>total</th><th>per 100 g (loss target)</th></tr>
+    <tr><td>Mass</td><td>${fmt(t.mass_g)} g</td><td>log m = ${fmt(d.log_mass, 3)}</td></tr>
+    <tr><td>Energy</td><td>${fmt(t.kcal, 0)} kcal</td><td>${t.mass_g ? fmt(t.kcal / t.mass_g * 100, 0) + " kcal" : "–"}</td></tr>
+    <tr><td>Protein</td><td>${fmt(t.protein_g)} g</td><td>${fmt(p100.protein_g, 2)} g</td></tr>
+    <tr><td>Fat</td><td>${fmt(t.fat_g)} g</td><td>${fmt(p100.fat_g, 2)} g</td></tr>
+    <tr><td>Carbs</td><td>${fmt(t.carb_g)} g</td><td>${fmt(p100.carb_g, 2)} g</td></tr>
+  </table><p class="hint">Main component: <b>${esc(d.primary || "–")}</b></p>`;
+
+  if (!d.has_labels) {
+    $("labels").innerHTML = `<p class="hint">No component labels — the label heads' loss is skipped for this sample.</p>`;
+  } else {
+    const chips = list => list.length ? `<div class="chips">${list.map(l =>
+      `<span class="chip ${l.target === "other" ? "other" : ""}">${esc(l.name)}${l.target === "other" ? " <small>→ other</small>" : ""}</span>`).join("")}</div>`
+      : `<p class="hint">none</p>`;
+    $("labels").innerHTML = `<div class="hint">Dish head (${info.vocab.dishes} classes)</div>${chips(d.labels.dishes)}
+      <div class="hint" style="margin-top:10px">Ingredient head (${info.vocab.ingredients} classes)</div>${chips(d.labels.ingredients)}`;
+  }
+
+  if (d.prediction) {
+    const pr = d.prediction.targets;
+    const row = (name, k, unit, dp = 1) => {
+      const err = t[k] ? (100 * (pr[k] - t[k]) / t[k]) : null;
+      return `<tr><td>${name}</td><td>${fmt(t[k], dp)} ${unit}</td><td>${fmt(pr[k], dp)} ${unit}</td><td>${err == null ? "–" : (err > 0 ? "+" : "") + err.toFixed(0) + " %"}</td></tr>`;
+    };
+    const chips = list => `<div class="chips">${list.map(l => `<span class="chip">${esc(l.name)} <small>${Math.round(100 * l.p)} %</small></span>`).join("") || "<span class='hint'>none ≥ 10 %</span>"}</div>`;
+    $("pred").innerHTML = `<table><tr><th></th><th>true</th><th>predicted</th><th>error</th></tr>
+      ${row("Mass", "mass_g", "g")}${row("Energy", "kcal", "kcal", 0)}${row("Protein", "protein_g", "g")}${row("Fat", "fat_g", "g")}${row("Carbs", "carb_g", "g")}
+      </table><p class="hint">90 % mass range: ${d.prediction.mass_range90[0]}–${d.prediction.mass_range90[1]} g</p>
+      <div class="hint">Dishes</div>${chips(d.prediction.dishes)}<div class="hint" style="margin-top:8px">Ingredients</div>${chips(d.prediction.ingredients)}`;
+  }
+
+  $("meta").innerHTML = Object.entries(d.meta).map(([k, v]) =>
+    `<div><b>${esc(k)}</b>: ${esc(typeof v === "object" ? Object.entries(v).map(([a, b]) => a + " " + b + " g").join(", ") : v)}</div>`).join("");
+}
+
+function step(delta) { $("index").value = Math.max(0, Number($("index").value) + delta); load(); }
+
+async function init() {
+  info = await (await fetch("/api/info")).json();
+  $("source").innerHTML = info.sources.map(s => `<option value="${s}">${s === "train" ? "Training stream (as trained)" : s.replace(":", " · ")}</option>`).join("");
+  $("predCard").hidden = !info.predict;
+  $("epoch").max = info.config.epochs;
+  $("source").onchange = () => { $("epochWrap").style.display = $("source").value === "train" ? "" : "none"; $("index").value = 0; load(); };
+  $("epoch").onchange = () => load();
+  $("index").onchange = () => load();
+  $("crop").value = info.config.crop;
+  $("crop").onchange = () => load();
+  $("prev").onclick = () => step(-1);
+  $("next").onclick = () => step(1);
+  $("rand").onclick = () => load({ random: 1 });
+  $("aug").onclick = () => load();
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    if (e.key === "ArrowRight") step(1);
+    else if (e.key === "ArrowLeft") step(-1);
+    else if (e.key === "r" || e.key === "R") load({ random: 1 });
+    else if (e.key === "a" || e.key === "A") load();
+  });
+  load();
+}
+init();
+</script>
+</body>
+</html>
