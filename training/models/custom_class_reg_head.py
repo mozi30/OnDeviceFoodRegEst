@@ -34,6 +34,7 @@ class ClassRegHead(nn.Module):
         num_dishes: number of dish labels (0 disables that output).
         num_ingredients: number of ingredient labels (0 disables that output).
         hidden: width of the shared hidden layer.
+        rec_hidden: if > 0, width of a separate hidden layer for the dish / ingredient outputs.
         dropout: dropout on the features.
         init_mass_g: mass the amount head predicts before training (its bias).
         mode: ``factorized`` (amount x composition, default) or ``direct``: the
@@ -52,7 +53,7 @@ class ClassRegHead(nn.Module):
 
     def __init__(self, in_features: int, num_dishes: int = 0, num_ingredients: int = 0,
                  hidden: int = 512, dropout: float = 0.2, init_mass_g: float = 200.0,
-                 mode: str = "factorized"):
+                 mode: str = "factorized", rec_hidden: int = 0):
         super().__init__()
         if mode not in ("factorized", "direct"):
             raise ValueError(f"unknown head mode {mode!r}")
@@ -60,8 +61,12 @@ class ClassRegHead(nn.Module):
         self.shared = nn.Sequential(nn.Dropout(dropout), nn.Linear(in_features, hidden), nn.ReLU(inplace=True))
         self.amount = nn.Linear(hidden, 2)
         self.composition = nn.Linear(hidden, 3 if mode == "factorized" else 4)  # direct: log kcal, fat, carb, protein
-        self.dishes = nn.Linear(hidden, num_dishes) if num_dishes else None
-        self.ingredients = nn.Linear(hidden, num_ingredients) if num_ingredients else None
+        # optional own hidden layer for recognition, so it does not share its capacity with weight / macros
+        self.rec = (nn.Sequential(nn.Dropout(dropout), nn.Linear(in_features, rec_hidden), nn.ReLU(inplace=True))
+                    if rec_hidden else None)
+        rec_width = rec_hidden or hidden
+        self.dishes = nn.Linear(rec_width, num_dishes) if num_dishes else None
+        self.ingredients = nn.Linear(rec_width, num_ingredients) if num_ingredients else None
 
         nn.init.zeros_(self.amount.weight)
         with torch.no_grad():
@@ -97,8 +102,9 @@ class ClassRegHead(nn.Module):
         }
         if self.mode == "direct":
             out["log_totals"] = log_totals
+        r = self.rec(features) if self.rec is not None else h
         if self.dishes is not None:
-            out["dish_logits"] = self.dishes(h)
+            out["dish_logits"] = self.dishes(r)
         if self.ingredients is not None:
-            out["ingredient_logits"] = self.ingredients(h)
+            out["ingredient_logits"] = self.ingredients(r)
         return out

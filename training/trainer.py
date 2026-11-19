@@ -73,7 +73,9 @@ from .datasets.labels import components
 from .label_quality import clean as clean_labels
 from .models import BACKBONES, FoodModel
 
-DATASETS = ("nutrition5k", "nutritionverse_real", "nutrition5k_side", "mm_food_100k")
+DATASETS = ("nutrition5k", "nutritionverse_real", "nutrition5k_side", "mm_food_100k", "food101")
+# datasets with a dish label but no ingredient list: their ingredient "not there" targets never count
+DISH_ONLY_DATASETS = ("food101",)
 Z90 = 1.645  # half width of a 90 % interval in standard deviations
 
 
@@ -92,6 +94,7 @@ class TrainConfig:
     crop: str = "center"                           # center (crop to square) | pad (pad to square, whole image kept)
     head_mode: str = "factorized"                  # factorized (amount x composition) | direct (comparison)
     hidden: int = 512
+    rec_hidden: int = 0                            # > 0: own hidden layer for dish / ingredient heads
     dropout: float = 0.2
     ema: float = 0.0                               # > 0: evaluate / keep an exponential moving average of the weights
     tta: bool = False                              # evaluation: average with the horizontally flipped image
@@ -112,6 +115,14 @@ class TrainConfig:
     dish_weight: float = 1.0
     ingredient_weight: float = 1.0
     min_label_count: int = 5                       # labels with fewer training dishes become "other"
+    # datasets whose nutrition labels are estimates (MM-Food-100K: by a language model): they train only the
+    # dish / ingredient heads, never weight, macros or kcal; a label only known from them needs
+    # min_label_count_weak dishes
+    weak_datasets: list[str] = field(default_factory=lambda: ["mm_food_100k", "food101"])
+    min_label_count_weak: int = 20
+    # weight of the "not there" targets of weak-dataset ingredients: MM-Food lists only the obvious
+    # ingredients, so a missing name is no evidence of absence; 0 = train only the named ones
+    weak_ingredient_negatives: float = 1.0
     frames_per_video: int = 4                      # only for nutrition5k_side
     workers: int = 8
     amp: bool = True                               # mixed precision on the GPU
@@ -186,6 +197,10 @@ def build_dataset(name: str, split: str, cfg: TrainConfig, train: bool):
             return None  # weak labels: used for training and validation only
         ds = (LocalFoodDataset(name, split, shuffle=train, seed=cfg.seed) if local_available(name, split)
               else MMFood100K(split, **common))
+    elif name == "food101":
+        if split == "test" or not local_available(name, split):
+            return None  # recognition only (training.prefetch food101), no test
+        ds = LocalFoodDataset(name, split, shuffle=train, seed=cfg.seed)
     else:
         raise ValueError(f"unknown dataset {name!r}, choose from {DATASETS}")
     if cfg.clean_labels and ds.records:
@@ -265,25 +280,37 @@ def compute_loss(out: dict, batch: dict, cfg: TrainConfig) -> tuple[torch.Tensor
     mass = t[:, 0]
     has_mass = torch.isfinite(mass) & (mass > 0)
     mu, log_var = out["log_mass"].float(), out["log_mass_var"].float().clamp(-7, 7)
-    nll = 0.5 * (torch.exp(-log_var) * (mass.clamp_min(1e-3).log() - mu) ** 2 + log_var)
-    parts = {"mass_nll": _masked_mean(nll, has_mass)}
+    # nan_to_num: photos without weight (Food-101) are masked out below, but a nan here would still
+    # turn the gradient into nan (0 * nan) and AMP would skip the whole step
+    nll = 0.5 * (torch.exp(-log_var) * (mass.nan_to_num(1.0).clamp_min(1e-3).log() - mu) ** 2 + log_var)
+    # datasets with estimated nutrition (MM-Food-100K): only the label heads learn from them
+    measured = ~torch.tensor([d in cfg.weak_datasets for d in batch["dataset"]], device=mass.device)
+    parts = {"mass_nll": _masked_mean(nll, has_mass & measured)}
 
     if "log_totals" in out:  # direct regression: Huber on log(1 + total) of kcal, fat, carbs, protein
         totals = t[:, 1:]
-        valid = torch.isfinite(totals) & (totals >= 0)
+        valid = torch.isfinite(totals) & (totals >= 0) & measured.unsqueeze(1)
         huber = F.smooth_l1_loss(out["log_totals"].float(), totals.nan_to_num().clamp_min(0).log1p(), reduction="none")
         parts["composition"] = _masked_mean(huber, valid)
         comp_weight = 1.0
     else:
         per_100g = t[:, [4, 2, 3]] / mass.unsqueeze(1) * 100  # protein, fat, carbs like the head
-        valid = has_mass.unsqueeze(1) & torch.isfinite(per_100g)
+        valid = (has_mass & measured).unsqueeze(1) & torch.isfinite(per_100g)
         huber = F.smooth_l1_loss(out["per_100g"].float(), per_100g.nan_to_num().clamp(0, 100), reduction="none")
         parts["composition"] = _masked_mean(huber, valid)
         comp_weight = cfg.composition_weight
 
     for key, logits, weight_key in (("dishes", "dish_logits", "dish"), ("ingredients", "ingredient_logits", "ingredient")):
         if logits in out:
-            bce = F.binary_cross_entropy_with_logits(out[logits].float(), batch[key], reduction="none").mean(1)
+            bce = F.binary_cross_entropy_with_logits(out[logits].float(), batch[key], reduction="none")
+            if key == "ingredients":
+                neg = batch[key] <= 0
+                dish_only = torch.tensor([d in DISH_ONLY_DATASETS for d in batch["dataset"]], device=bce.device)
+                weight = torch.ones_like(bce)
+                if cfg.weak_ingredient_negatives != 1.0:  # unnamed ingredients of weak photos
+                    weight = torch.where(neg & ~measured.unsqueeze(1), cfg.weak_ingredient_negatives, weight)
+                bce = bce * torch.where(neg & dish_only.unsqueeze(1), 0.0, weight)
+            bce = bce.mean(1)
             parts[weight_key] = _masked_mean(bce, batch["has_labels"])
 
     total = (parts["mass_nll"] + comp_weight * parts["composition"]
@@ -507,16 +534,21 @@ def train(cfg: TrainConfig) -> dict:
                  for split in ("val", "test")}
 
     # label vocabularies: dishes / ingredients that occur in enough training dishes, plus "other"
-    counts = [Counter(), Counter()]
-    for ds in train_sets.values():
+    counts = [Counter(), Counter()]   # all training dishes
+    real = [Counter(), Counter()]     # dishes of datasets with measured labels
+    for name, ds in train_sets.items():
         for rec in {r["dish_id"]: r for r in ds.records}.values():
-            for counter, names in zip(counts, components(rec) or ([], [])):
-                counter.update(names)
-    dishes, ingredients = ([n for n, c in counter.most_common() if c >= cfg.min_label_count] + ["other"] for counter in counts)
+            for i, names in enumerate(components(rec) or ([], [])):
+                counts[i].update(names)
+                if name not in cfg.weak_datasets:
+                    real[i].update(names)
+    dishes, ingredients = ([n for n, c in counts[i].most_common()
+                            if real[i][n] >= cfg.min_label_count or c >= cfg.min_label_count_weak] + ["other"]
+                           for i in range(2))
     (run_dir / "labels.json").write_text(json.dumps({"dishes": dishes, "ingredients": ingredients}, indent=1))
 
     model = FoodModel(cfg.backbone, len(dishes), len(ingredients), pretrained=cfg.pretrained,
-                      hidden=cfg.hidden, dropout=cfg.dropout, mode=cfg.head_mode).to(cfg.device)
+                      hidden=cfg.hidden, dropout=cfg.dropout, mode=cfg.head_mode, rec_hidden=cfg.rec_hidden).to(cfg.device)
     if cfg.init_from:  # e.g. pre-trained on MM-Food-100K: take every layer whose shape still fits
         state = torch.load(cfg.init_from, map_location=cfg.device)["model"]
         own = model.state_dict()
@@ -679,7 +711,7 @@ def main() -> None:
         flag = "--" + f.name.replace("_", "-")
         if isinstance(default, bool):
             parser.add_argument(flag, action=argparse.BooleanOptionalAction, default=default)
-        elif f.name in ("datasets", "eval_datasets"):
+        elif f.name in ("datasets", "eval_datasets", "weak_datasets"):
             parser.add_argument(flag, nargs="+", default=default, choices=DATASETS)
         elif isinstance(default, list):
             parser.add_argument(flag, nargs="*", default=default)

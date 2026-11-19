@@ -12,6 +12,7 @@ already exist are not fetched again.
 
     uv run python -m training.prefetch side --frames 3 --max-video-mb 6
     uv run python -m training.prefetch mmfood --n-train 30000 --n-val 1500
+    uv run --with pyarrow python -m training.prefetch food101
 """
 
 from __future__ import annotations
@@ -122,6 +123,46 @@ def mmfood(args) -> None:
         _run("mm_food_100k", split, usable[:n], work, args.threads)
 
 
+def food101(args) -> None:
+    """Food-101 (ETH Zurich, 101 mostly Western dishes, 1 dish label per photo) from the Hub parquet
+    files. One shard (~0.5 GB) is downloaded at a time and deleted after its photos are extracted.
+    Needs pyarrow: ``uv run --with pyarrow python -m training.prefetch food101``."""
+    import pyarrow.parquet as pq
+    from huggingface_hub import hf_hub_download
+
+    img_dir = LOCAL_DIR / "food101" / "images"
+    tmp_dir = LOCAL_DIR / "food101" / "_parquet"
+    for split, src, shards in (("val", "validation", 3), ("train", "train", 8)):
+        if split not in args.splits:
+            continue
+        for i in range(shards):
+            name = f"data/{src}-{i:05d}-of-{shards:05d}.parquet"
+            path = Path(hf_hub_download("ethz/food101", name, repo_type="dataset", local_dir=tmp_dir))
+            table = pq.read_table(path)
+            meta = json.loads(table.schema.metadata[b"huggingface"])
+            classes = meta["info"]["features"]["label"]["names"]
+            records = []
+            for j, (img, label) in enumerate(zip(table.column("image").to_pylist(), table.column("label").to_pylist())):
+                image_id = f"f101_{src}_{i}_{j}"
+                records.append({"image_id": image_id, "dish_id": image_id, "_bytes": img["bytes"],
+                                "dish_name": classes[label].replace("_", " "), "food_type": "food101",
+                                "ingredients": []} | {k: math.nan for k in TARGET_KEYS})
+            del table
+
+            def work(rec):
+                image = Image.open(io.BytesIO(rec["_bytes"]))
+                image.draft("RGB", (args.size, args.size))
+                out = img_dir / f"{rec['image_id']}.jpg"
+                _save(image.convert("RGB"), out, args.size)
+                row = {k: v for k, v in rec.items() if not k.startswith("_")}
+                return [row | {"dataset": "food101", "_path": str(out), "_src": rec["image_id"]}]
+
+            if args.n and split == "val":  # spread over the dishes (each shard is sorted by dish)
+                records = records[:: max(1, len(records) * shards // args.n)]
+            _run("food101", split, records, work, args.threads)
+            path.unlink()
+
+
 def convert(args) -> None:
     """Nutrition5k overhead / NutritionVerse-Real: the cached originals -> small local JPEGs (same records)."""
     from .trainer import TrainConfig, build_dataset
@@ -154,15 +195,18 @@ def main() -> None:
     m.add_argument("--n-train", type=int, default=30000)
     m.add_argument("--n-val", type=int, default=1500)
     m.add_argument("--min-food-prob", type=float, default=0.9)
+    f = sub.add_parser("food101")
+    f.add_argument("--n", type=int, default=2500, help="val photos kept (train: all 75,750)")
+    f.add_argument("--splits", nargs="+", default=["val", "train"])
     c = sub.add_parser("convert")
     c.add_argument("--datasets", nargs="+", default=["nutrition5k", "nutritionverse_real"])
-    for q in (s, m, c):
+    for q in (s, m, f, c):
         q.add_argument("--size", type=int, default=320)
         q.add_argument("--threads", type=int, default=24)
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
     logging.getLogger("training.datasets._streaming").setLevel(logging.ERROR)
-    {"side": side, "mmfood": mmfood, "convert": convert}[args.what](args)
+    {"side": side, "mmfood": mmfood, "food101": food101, "convert": convert}[args.what](args)
 
 
 if __name__ == "__main__":

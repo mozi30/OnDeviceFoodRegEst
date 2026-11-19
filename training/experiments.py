@@ -117,6 +117,33 @@ GROUPS["crop_pad"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "ex
 GROUPS["clean"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "experiments": {
     "mobilenetv3_large_img320": GROUPS["final_hires"]["experiments"]["mobilenetv3_large_img320"],
     "mobilenetv3_large_img320_pad": GROUPS["crop_pad"]["experiments"]["mobilenetv3_large_img320_pad"]}}
+# + MM-Food-100K (~96k photos, LLM labels) for the dish / ingredient heads only (no weight, macros or kcal).
+# Control: clean/mobilenetv3_large_img320_pad. mm_food_100k=0.1 draws ~9.5k MM-Food photos per epoch.
+_MM = ["--datasets", "nutrition5k", "nutritionverse_real", "nutrition5k_side", "mm_food_100k", "--epochs", "40",
+       "--backbone", "mobilenetv3_large", "--image-size", "320", "--crop", "pad", "--sampling", "nutrition5k_side=0.25"]
+GROUPS["mm_weak"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "experiments": {
+    "pad_mmw0.1": _MM + ["mm_food_100k=0.1"],
+    "pad_mmw0.25": _MM + ["mm_food_100k=0.25"]}}
+
+# Why does MM-Food make recognition of the test-set labels worse? Capacity of the shared 512 hidden
+# layer (own recognition layer) or MM-Food's incomplete ingredient lists (unnamed = no evidence)?
+# Compared with mm_weak/pad_mmw0.25_s0.
+_MMD = _MM + ["mm_food_100k=0.25"]
+GROUPS["mm_diag"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "experiments": {
+    "rec1024": _MMD + ["--rec-hidden", "1024"],
+    "posonly": _MMD + ["--weak-ingredient-negatives", "0.0"],
+    "rec1024_posonly": _MMD + ["--rec-hidden", "1024", "--weak-ingredient-negatives", "0.0"]}}
+
+# + Food-101 (101 mostly Western / European dishes, dish label only) for more and Western dish names;
+# MM-Food names already count from 10 photos. Uses both mm_diag changes.
+_W = ["--datasets", "nutrition5k", "nutritionverse_real", "nutrition5k_side", "mm_food_100k", "food101", "--epochs", "40",
+      "--backbone", "mobilenetv3_large", "--image-size", "320", "--crop", "pad", "--rec-hidden", "1024",
+      "--weak-ingredient-negatives", "0.0", "--min-label-count-weak", "10",
+      "--sampling", "nutrition5k_side=0.25", "mm_food_100k=0.2", "food101=0.2"]
+GROUPS["western"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "experiments": {"mm_f101": _W}}
+# Control for mm_diag: the own 1024 recognition layer without any extra recognition data.
+GROUPS["rec_nomm"] = {"seeds": [0, 1], "base": GROUPS["final_side"]["base"], "experiments": {
+    "pad_rec1024": GROUPS["crop_pad"]["experiments"]["mobilenetv3_large_img320_pad"] + ["--rec-hidden", "1024"]}}
 
 
 def run_one(group: str, name: str, args: list[str], seed: int, gpu_lock=None) -> str:

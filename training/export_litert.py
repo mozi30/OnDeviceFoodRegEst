@@ -56,7 +56,7 @@ def load(checkpoint: Path) -> tuple[ExportWrapper, dict]:
     ckpt = torch.load(checkpoint, map_location="cpu", weights_only=False)
     cfg = ckpt["config"]
     model = FoodModel(cfg["backbone"], len(ckpt["dishes"]), len(ckpt["ingredients"]), pretrained=False,
-                      hidden=cfg["hidden"], dropout=cfg["dropout"], mode=cfg["head_mode"])
+                      hidden=cfg["hidden"], dropout=cfg["dropout"], mode=cfg["head_mode"], rec_hidden=cfg.get("rec_hidden", 0))
     model.load_state_dict(ckpt["model"])
     model.eval()
     norm = ckpt["normalization"]

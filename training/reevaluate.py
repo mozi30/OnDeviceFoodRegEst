@@ -40,7 +40,7 @@ def reevaluate(run_dir: Path, workers: int, backup_name: str = "results_topdown.
 
     dishes, ingredients, norm = ckpt["dishes"], ckpt["ingredients"], ckpt["normalization"]
     model = FoodModel(cfg.backbone, len(dishes), len(ingredients), pretrained=False,
-                      hidden=cfg.hidden, dropout=cfg.dropout, mode=cfg.head_mode).to(cfg.device)
+                      hidden=cfg.hidden, dropout=cfg.dropout, mode=cfg.head_mode, rec_hidden=cfg.rec_hidden).to(cfg.device)
     model.load_state_dict(ckpt["model"])
     collate = Collate(dishes, ingredients)
     baselines = {}

@@ -134,7 +134,7 @@ class Viewer:
             ck = torch.load(checkpoint, map_location="cpu", weights_only=False)
             c = ck["config"]
             self.model = FoodModel(c["backbone"], len(ck["dishes"]), len(ck["ingredients"]), pretrained=False,
-                                   hidden=c["hidden"], dropout=c["dropout"], mode=c["head_mode"]).eval()
+                                   hidden=c["hidden"], dropout=c["dropout"], mode=c["head_mode"], rec_hidden=c.get("rec_hidden", 0)).eval()
             self.model.load_state_dict(ck["model"])
             self.norm = ck["normalization"]
             self.log_std_scale = ck.get("log_std_scale", 1.0)
